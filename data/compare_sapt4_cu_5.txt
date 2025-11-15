@@ -1,0 +1,103 @@
+================================================================================
+Comparing HTML files from Saptamana4 and Saptamana5
+================================================================================
+
+CR0001.html [CHANGED: -4]
+  Saptamana4: 22 rows
+  Saptamana5: 18 rows
+  Difference: -4 rows
+
+CR201.html [CHANGED: -15]
+  Saptamana4: 18 rows
+  Saptamana5: 3 rows
+  Difference: -15 rows
+
+CR202.html [CHANGED: -11]
+  Saptamana4: 18 rows
+  Saptamana5: 7 rows
+  Difference: -11 rows
+
+CR203.html [CHANGED: -6]
+  Saptamana4: 20 rows
+  Saptamana5: 14 rows
+  Difference: -6 rows
+
+CR204.html [CHANGED: -22]
+  Saptamana4: 43 rows
+  Saptamana5: 21 rows
+  Difference: -22 rows
+
+CR205.html [CHANGED: -5]
+  Saptamana4: 19 rows
+  Saptamana5: 14 rows
+  Difference: -5 rows
+
+CR301.html [CHANGED: -5]
+  Saptamana4: 61 rows
+  Saptamana5: 56 rows
+  Difference: -5 rows
+
+CR302.html [CHANGED: -22]
+  Saptamana4: 55 rows
+  Saptamana5: 33 rows
+  Difference: -22 rows
+
+CR401.html [CHANGED: -17]
+  Saptamana4: 35 rows
+  Saptamana5: 18 rows
+  Difference: -17 rows
+
+CR402.html [CHANGED: -5]
+  Saptamana4: 36 rows
+  Saptamana5: 31 rows
+  Difference: -5 rows
+
+CR403.html [CHANGED: -16]
+  Saptamana4: 46 rows
+  Saptamana5: 30 rows
+  Difference: -16 rows
+
+CR405.html [CHANGED: -5]
+  Saptamana4: 28 rows
+  Saptamana5: 23 rows
+  Difference: -5 rows
+
+CR406.html [CHANGED: -6]
+  Saptamana4: 28 rows
+  Saptamana5: 22 rows
+  Difference: -6 rows
+
+T301.html [CHANGED: -13]
+  Saptamana4: 43 rows
+  Saptamana5: 30 rows
+  Difference: -13 rows
+
+T302.html [CHANGED: -22]
+  Saptamana4: 35 rows
+  Saptamana5: 13 rows
+  Difference: -22 rows
+
+T303.html [CHANGED: -13]
+  Saptamana4: 25 rows
+  Saptamana5: 12 rows
+  Difference: -13 rows
+
+T304.html [CHANGED: -20]
+  Saptamana4: 25 rows
+  Saptamana5: 5 rows
+  Difference: -20 rows
+
+T305.html
+  Saptamana4: 17 rows
+  Saptamana5: 17 rows
+
+================================================================================
+SUMMARY
+================================================================================
+Total files in Saptamana4: 18
+Total files in Saptamana5: 18
+Total unique files: 18
+
+Total rows in Saptamana4: 574
+Total rows in Saptamana5: 367
+Total difference: -207
