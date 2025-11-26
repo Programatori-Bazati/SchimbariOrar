@@ -1,32 +1,61 @@
 async function fetchLastNumbers(file) {
-  const response = await fetch(file);
-  const text = await response.text();
-  const lines = text.trim().split(/\r?\n/);
-  const last3 = lines.slice(-3);
-  return last3.map((line) => {
-    const match = line.match(/(-?\d+)\s*$/);
-    return match ? match[1] : null;
-  });
+  try {
+    const response = await fetch(file);
+    const text = await response.text();
+    const lines = text.trim().split(/\r?\n/);
+    const last3 = lines.slice(-3);
+    return last3.map((line) => {
+      const match = line.match(/(-?\d+)\s*$/);
+      return match ? Number(match[1]) : null;
+    });
+  } catch (err) {
+    console.error("Failed to fetch", file, err);
+    return [null, null, null];
+  }
 }
+
+function setupPrevRemovedCheckbox() {
+  const checkbox = document.getElementById("togglePrevRemoved");
+  if (!checkbox) return;
+
+  checkbox.checked = showPrevRemoved;
+
+  if (!checkbox._listenerAdded) {
+    checkbox.addEventListener("change", async () => {
+      showPrevRemoved = checkbox.checked;
+      const files = await getTxtFilesFromDataFolder();
+      displayNumbers(files);
+      renderFileList(files);
+    });
+    checkbox._listenerAdded = true;
+  }
+}
+
 
 async function getTxtFilesFromDataFolder() {
   return [
     "data/compare_sapt4_cu_5.txt",
     "data/compare_sapt5_cu_6.txt",
     "data/compare_sapt6_cu_7.txt",
+    "data/compare_sapt7_cu_8.txt",
+    "data/compare_sapt8_cu_9.txt",
   ];
 }
 
 let currentFileIndex = 0;
+let showPrevRemoved = true;
 
 const fileButtonNames = [
   "Schimbări săptămâna 5",
   "Schimbări săptămâna 6",
   "Schimbări săptămâna 7",
+  "Schimbări săptămâna 8",
+  "Schimbări săptămâna 9",
 ];
 
 async function renderFileList(files) {
   const fileList = document.getElementById("fileList");
+  if (!fileList) return;
   fileList.innerHTML = "";
   files.forEach((file, idx) => {
     const li = document.createElement("li");
@@ -34,163 +63,221 @@ async function renderFileList(files) {
     if (idx === currentFileIndex) li.classList.add("selected");
     li.onclick = () => {
       currentFileIndex = idx;
-      displayNumbers(files);
       renderFileList(files);
+      displayNumbers(files);
     };
     fileList.appendChild(li);
   });
 }
 
 function getChangeText(third) {
+  if (third === null || isNaN(third)) return "Date insuficiente.";
   if (third < 0) {
-    return `Ore mutate: ${Math.abs(third)}`;
+    return `Ore scoase: ${Math.abs(third)} 🎉`;
   } else if (third > 0) {
-    return `Ore adăugate: ${Math.abs(third)}`;
+    return `Ore adăugate: ${Math.abs(third)} 😡📢`;
   } else {
     return `Nicio schimbare la ore.`;
   }
 }
 
+function percentColor(pct) {
+  if (pct === "N/A") return "#cccccc";
+
+  if (Number(pct) === 0) {
+    return `rgba(200, 0, 255, 1)`;
+  } else if (Number(pct) < 0) {
+    return `rgba(0, 255, 0, 1)`;
+  } else {
+    return `rgba(255, 0, 0, 1)`
+  }
+}
+
 async function displayNumbers(files) {
-  // Get initial hours (first number from first file)
-  let initialHours = null;
-  let totalMoved = 0;
-  let allThirdNumbers = [];
-  // Helper to extract last 3 lines and third number from each file
-  async function getNumbersFromFile(file) {
-    const nums = await fetchLastNumbers(file);
-    return nums.map(Number);
-  }
-  // Get initial hours from first file
-  if (files && files.length > 0) {
-    const nums = await getNumbersFromFile(files[0]);
-    initialHours = nums[0];
-  }
-  // Get total moved from all files
-  for (let f of files) {
-    const nums = await getNumbersFromFile(f);
-    allThirdNumbers.push(nums[2]);
-  }
-  totalMoved = Math.abs(
-    allThirdNumbers.reduce((acc, n) => acc + (isNaN(n) ? 0 : n), 0)
+  if (!files || files.length === 0) return;
+
+  const allFilesNumbers = await Promise.all(
+    files.map((f) => fetchLastNumbers(f))
   );
 
-  // Main file data for current view
+  const initialHours = Array.isArray(allFilesNumbers[0])
+    ? allFilesNumbers[0][0]
+    : null;
+
+  const prevRemoved = allFilesNumbers
+    .slice(0, currentFileIndex)
+    .reduce((acc, nums) => {
+      if (!nums) return acc;
+      const val = nums[2];
+      if (val == null || isNaN(val)) return acc;
+      return acc + (val < 0 ? Math.abs(val) : 0);
+    }, 0);
+
   const dynamicTitle = document.getElementById("dynamicTitle");
-  dynamicTitle.textContent = fileButtonNames[currentFileIndex] || "";
-  const file = files[currentFileIndex];
-  const numbers = await fetchLastNumbers(file);
-  const [first, second, third] = numbers.map(Number);
+  if (dynamicTitle)
+    dynamicTitle.textContent = fileButtonNames[currentFileIndex] || "";
+
+  const numbers = allFilesNumbers[currentFileIndex];
+  const first = numbers[0] != null ? numbers[0] : 0;
+  const second = numbers[1] != null ? numbers[1] : 0;
+  const third = numbers[2] != null ? numbers[2] : 0;
+
   const changeText = getChangeText(third);
   let percent =
     first !== 0 ? (((second - first) / first) * 100).toFixed(2) : "N/A";
-  // Extract week number from button text
+
   const weekMatch = fileButtonNames[currentFileIndex].match(/(\d+)/);
   const weekNum = weekMatch ? parseInt(weekMatch[1]) : "";
   const prevWeekNum = weekNum ? weekNum - 1 : "";
-  // Progress percentage
+  const lastNumbers = allFilesNumbers[allFilesNumbers.length - 1];
+  const totalMoved = lastNumbers && lastNumbers[1] != null ? lastNumbers[1] : null;
+
   let progressPercent = initialHours
-    ? ((totalMoved / initialHours) * 100).toFixed(1)
+    ? ((totalMoved / initialHours) * 100).toFixed(2)
     : "N/A";
+
   const container = document.getElementById("results");
+  if (!container) return;
   container.innerHTML = "";
+
   const block = document.createElement("div");
   block.className = "file-block";
-  // Calculate bar chart proportions
-  const hoursThisWeek = second;
-  const hoursRemoved = Math.abs(third < 0 ? third : 0);
-  const total = hoursThisWeek + hoursRemoved;
-  const weekPercent = total ? (hoursThisWeek / total) * 100 : 0;
-  const removedPercent = total ? (hoursRemoved / total) * 100 : 0;
-  // Helper to check if text fits in bar (approximate, based on percent)
-  function getBarLabel(text, percent, emoji, tooltipText) {
-    // If bar is less than 20% width, use emoji and tooltip
-    const percentValue = percent.toFixed(1);
-    let percentColor = "";
-    if (tooltipText.includes("CREIC")) {
-      percentColor = "#c0392b"; // left bar color
+
+  const hoursThisWeek = second || 0;
+  const hoursRemovedThisWeek = third < 0 ? Math.abs(third) : 0;
+  const hoursRemovedPrevious = prevRemoved || 0;
+
+  const includePrev = showPrevRemoved;
+
+  const chartParts = {
+    thisWeek: hoursThisWeek,
+    removedThisWeek: hoursRemovedThisWeek,
+    removedPrev: includePrev ? hoursRemovedPrevious : 0,
+  };
+
+  const sumParts = Object.values(chartParts).reduce((a, b) => a + b, 0) || 1; // avoid divide by zero
+  const pctThisWeek = (chartParts.thisWeek / sumParts) * 100;
+  const pctRemovedThisWeek = (chartParts.removedThisWeek / sumParts) * 100;
+  const pctRemovedPrev = (chartParts.removedPrev / sumParts) * 100;
+
+  function getBarLabel(text, percent, hours, tooltipText, color) {
+    const percentValue = percent.toFixed(2);
+    if (percent < 18) {
+      return `<span class="bar-label" data-tooltip="${tooltipText} (${percentValue}%)" data-percent-color="${color}">${hours} h</span>`;
     } else {
-      percentColor = "#27ae60"; // right bar color
-    }
-    if (percent < 20) {
-      return `<span class="bar-label" data-tooltip="${tooltipText} (${percentValue}%)" data-percent-color="${percentColor}">${emoji}</span>`;
-    } else {
-      return `<span class="bar-label" data-tooltip="${tooltipText} (${percentValue}%)" data-percent-color="${percentColor}">${text}</span>`;
+      return `<span class="bar-label" data-tooltip="${tooltipText} (${percentValue}%)" data-percent-color="${color}">${text}</span>`;
     }
   }
 
+  // Build inner HTML for bar chart — three possible segments, previous bar only when included
   block.innerHTML = `
     <div class="bar-chart-container">
-      <div class="bar-chart">
-        <div class="bar-hours-week" style="width: ${weekPercent}%;" data-tooltip="Ore CREIC și TEAM: ${hoursThisWeek} (${weekPercent.toFixed(
-    1
+      <div class="bar-chart" role="img" aria-label="Diagramă ore">
+        <div class="bar-hours-week" style="width: ${pctThisWeek}%" data-tooltip="Ore CREIC și TEAM: ${hoursThisWeek} (${pctThisWeek.toFixed(
+    2
   )}%)">
           ${
             hoursThisWeek > 0
               ? getBarLabel(
                   `Ore CREIC și TEAM: ${hoursThisWeek}`,
-                  weekPercent,
-                  "😈",
-                  `Ore CREIC și TEAM: ${hoursThisWeek}`
+                  pctThisWeek,
+                  hoursThisWeek,
+                  `Ore CREIC și TEAM: ${hoursThisWeek}`,
+                  "#c0392b"
                 )
-              : ""
+              : "🥳"
           }
         </div>
-        <div class="bar-hours-removed" style="width: ${removedPercent}%;" data-tooltip="Ore mutate: ${hoursRemoved} (${removedPercent.toFixed(
-    1
+        <div class="bar-hours-removed" style="width: ${pctRemovedThisWeek}%" data-tooltip="Ore mutate: ${hoursRemovedThisWeek} (${pctRemovedThisWeek.toFixed(
+    2
   )}%)">
           ${
-            hoursRemoved > 0
+            hoursRemovedThisWeek > 0
               ? getBarLabel(
-                  `Ore mutate: ${hoursRemoved}`,
-                  removedPercent,
-                  "😇",
-                  `Ore mutate: ${hoursRemoved}`
+                  `Ore mutate: ${hoursRemovedThisWeek}`,
+                  pctRemovedThisWeek,
+                  hoursRemovedThisWeek,
+                  `Ore mutate: ${hoursRemovedThisWeek}`,
+                  "#27ae60"
                 )
-              : ""
+              : "😡"
           }
         </div>
+        ${
+          includePrev
+            ? `<div class="bar-hours-previous" style="width: ${pctRemovedPrev}%" data-tooltip="Ore mutate anterior: ${hoursRemovedPrevious} (${pctRemovedPrev.toFixed(
+                2
+              )}%)">
+            ${
+              hoursRemovedPrevious > 0
+                ? getBarLabel(
+                    `Ore mutate anterior: ${hoursRemovedPrevious}`,
+                    pctRemovedPrev,
+                    hoursRemovedPrevious,
+                    `Ore mutate anterior: ${hoursRemovedPrevious}`,
+                    "#14532d"
+                  )
+                : "😡"
+            }
+          </div>`
+            : ""
+        }
       </div>
-      <div class="bar-hint" style="text-align:left; font-size:0.95em; color:#fff; margin-top:8px; font-weight:bold;">* Hover pentru mai multe detalii</div>
+      <div class="bar-hint" style="text-align:left; font-size:1em; color:#fff; margin-top:8px; font-weight:bold; display:flex; align-items:center; gap:12px;">
+        <span>* Hover pentru mai multe detalii</span>
+        <label style="font-weight:normal; font-size:0.95em; display:flex; align-items:center; gap:4px;">
+          <input type="checkbox" id="togglePrevRemoved" ${showPrevRemoved ? "checked" : ""}>
+          Vezi ore mutate anterior
+        </label>
+      </div>
     </div>
+
     <div class='numbers'>
-      Ore CREIC și TEAM initial: ${initialHours}<br>
+      Ore CREIC și TEAM initial: ${initialHours ?? "N/A"}<br>
       Total ore mutate: ${totalMoved}<br>
       Progres mutare înapoi în oraș: ${progressPercent}%<br>
       <br>
-      Ore săptămâna trecută (${prevWeekNum}): ${first}<br>
-      Ore săptămâna aceasta (${weekNum}): ${second}<br>
-      ${changeText}<br>
-      Schimbare procentuală: ${percent}%
+      Ore săptămâna trecută (${prevWeekNum}): ${first ?? "N/A"}<br>
+      Ore săptămâna aceasta (${weekNum}): ${second ?? "N/A"}<br>
+      <span style="color:${percentColor(percent)};">
+        ${changeText}<br>
+        Schimbare procentuală: ${percent}%
+      </span>
+
     </div>
   `;
+
   container.appendChild(block);
+
+  setupPrevRemovedCheckbox();
 }
 
 async function initView() {
   const files = await getTxtFilesFromDataFolder();
+  setupPrevRemovedCheckbox();
   renderFileList(files);
   displayNumbers(files);
 }
+
 
 document.addEventListener("mouseover", function (e) {
   if (
     e.target.classList.contains("bar-label") ||
     e.target.classList.contains("bar-hours-week") ||
-    e.target.classList.contains("bar-hours-removed")
+    e.target.classList.contains("bar-hours-removed") ||
+    e.target.classList.contains("bar-hours-previous")
   ) {
     const tooltip = document.createElement("div");
     tooltip.className = "bar-tooltip";
     let tooltipText = e.target.getAttribute("data-tooltip") || "";
-    let percentColor = e.target.getAttribute("data-percent-color");
-    // If hovering bar, set percentColor based on bar type
+    let percentColor = e.target.getAttribute("data-percent-color") || "";
+
     if (!percentColor) {
-      if (e.target.classList.contains("bar-hours-week")) {
-        percentColor = "#c0392b";
-      } else if (e.target.classList.contains("bar-hours-removed")) {
-        percentColor = "#27ae60";
-      }
+      if (e.target.classList.contains("bar-hours-week")) percentColor = "#c0392b";
+      else if (e.target.classList.contains("bar-hours-removed")) percentColor = "#27ae60";
+      else if (e.target.classList.contains("bar-hours-previous")) percentColor = "#14532d";
     }
+
     if (percentColor && tooltipText.match(/\((\d+\.\d+%)\)/)) {
       tooltip.innerHTML = tooltipText.replace(
         /\((\d+\.\d+%)\)/,
@@ -199,6 +286,7 @@ document.addEventListener("mouseover", function (e) {
     } else {
       tooltip.innerText = tooltipText;
     }
+
     document.body.appendChild(tooltip);
     tooltip.style.position = "absolute";
     tooltip.style.width = "340px";
@@ -212,50 +300,44 @@ document.addEventListener("mouseover", function (e) {
     tooltip.style.zIndex = "99999";
     tooltip.style.whiteSpace = "normal";
     tooltip.style.pointerEvents = "none";
-    // Position relative to mouse
-    document.addEventListener("mousemove", positionTooltip);
+
+    let tooltipPositionRequest = null;
     function positionTooltip(ev) {
-      let isRight = e.target.classList.contains("bar-hours-removed");
-      if (e.target.classList.contains("bar-label")) {
-        if (
-          e.target.parentElement &&
-          e.target.parentElement.classList.contains("bar-hours-removed")
-        ) {
-          isRight = true;
-        }
-      }
-      // Default position
-      let left = ev.clientX;
-      let top = ev.clientY + 24;
-      let transform = isRight ? "translateX(-100%)" : "translateX(0)";
-      // Calculate tooltip width
-      const tooltipWidth = tooltip.offsetWidth || 340;
-      // Ensure tooltip fits on the right
-      if (isRight && left - tooltipWidth < 0) {
-        left = tooltipWidth + 8;
-      }
-      // Ensure tooltip fits on the left
-      if (!isRight && left + tooltipWidth > window.innerWidth) {
-        left = window.innerWidth - tooltipWidth - 8;
-      }
-      // Ensure tooltip fits on top/bottom
-      if (top + tooltip.offsetHeight > window.innerHeight) {
-        top = window.innerHeight - tooltip.offsetHeight - 8;
-      }
-      if (top < 0) {
-        top = 8;
-      }
-      tooltip.style.left = left + "px";
-      tooltip.style.top = top + "px";
-      tooltip.style.transform = transform;
+      if (tooltipPositionRequest) return;
+      tooltipPositionRequest = requestAnimationFrame(() => {
+        let isRight =
+          e.target.closest(".bar-hours-removed") ||
+          e.target.closest(".bar-hours-previous");
+
+        let left = ev.clientX;
+        let top = ev.clientY + 24;
+        let transform = isRight ? "translateX(-100%)" : "translateX(0)";
+        const tooltipWidth = tooltip.offsetWidth || 340;
+
+        if (isRight && left - tooltipWidth < 0) left = tooltipWidth + 8;
+        if (!isRight && left + tooltipWidth > window.innerWidth)
+          left = window.innerWidth - tooltipWidth - 8;
+
+        if (top + tooltip.offsetHeight > window.innerHeight)
+          top = window.innerHeight - tooltip.offsetHeight - 8;
+        if (top < 0) top = 8;
+
+        tooltip.style.left = left + "px";
+        tooltip.style.top = top + "px";
+        tooltip.style.transform = transform;
+
+        tooltipPositionRequest = null;
+      });
     }
+
+    document.addEventListener("mousemove", positionTooltip);
     e.target._tooltip = tooltip;
     e.target._positionTooltip = positionTooltip;
   }
 });
 
 document.addEventListener("mouseout", function (e) {
-  if (e.target._tooltip) {
+  if (e.target && e.target._tooltip) {
     e.target._tooltip.remove();
     e.target._tooltip = null;
     if (e.target._positionTooltip) {
