@@ -220,7 +220,7 @@ body {
 .footer-warning {
   text-align: center;
   padding: 8px;
-  background: #d11d094b;
+  background: #ff19004b;
   border-radius: 8px;
   border: 2px solid #ff0000;
   display: flex;
@@ -234,7 +234,7 @@ body {
   border-radius: 4px;
 }
 .footer-warning-text {
-  color: #ff0000;
+  color: #ff4d4d;
   font-size: 1.1em;
   font-weight: bold;
   line-height: 1.4em;
@@ -278,4 +278,129 @@ body {
 }
 #toggleMode:hover {
   background: #74b9ff;
+}
+
+.bar-chart-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.bar-chart {
+  min-width: 280px; /* ensure it doesn’t collapse on very small screens */
+  width: 100%;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+  }
+
+  .container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 20px;
+    box-shadow: none;
+  }
+
+  .main-content {
+    padding: 20px;
+  }
+
+  .bar-chart {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .bar-hours-week,
+  .bar-hours-removed,
+  .bar-hours-previous {
+    justify-content: center !important;
+    padding: 8px !important;
+    font-size: 1em !important;
+    width: 100% !important;
+    margin-bottom: 8px;
+  }
+
+  .bar-label {
+    font-size: 0.85em !important;
+  }
+
+  .main-title {
+    font-size: 2em;
+    padding: 20px;
+  }
+
+  .dynamic-title {
+    font-size: 1.8em;
+  }
+
+  .numbers {
+    font-size: 1em;
+    padding: 12px;
+  }
+
+  #toggleView,
+  #toggleMode {
+    width: 100%;
+    font-size: 0.95em;
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    min-height: auto;
+  }
+
+  .footer-left,
+  .footer-right {
+    max-width: 100%;
+    margin-bottom: 16px;
+  }
+
+  .footer-warning {
+    width: 90%;
+    padding: 12px;
+    font-size: 0.95em;
+  }
+
+  .footer-logo {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-title {
+    font-size: 1.5em;
+    padding: 12px;
+  }
+
+  .dynamic-title {
+    font-size: 1.2em;
+  }
+
+  .numbers {
+    font-size: 0.9em;
+  }
+}
+
+@media (max-width: 768px) {
+  .bar-tooltip {
+    font-size: 0.85em;
+    padding: 6px 10px;
+    max-width: 80vw;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 480px) {
+  .bar-tooltip {
+    font-size: 0.75em;
+    padding: 4px 8px;
+  }
 }

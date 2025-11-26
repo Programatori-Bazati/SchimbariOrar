@@ -31,7 +31,6 @@ function setupPrevRemovedCheckbox() {
   }
 }
 
-
 async function getTxtFilesFromDataFolder() {
   return [
     "data/compare_sapt4_cu_5.txt",
@@ -42,9 +41,6 @@ async function getTxtFilesFromDataFolder() {
   ];
 }
 
-let currentFileIndex = 0;
-let showPrevRemoved = true;
-
 const fileButtonNames = [
   "Schimbări săptămâna 5",
   "Schimbări săptămâna 6",
@@ -52,6 +48,9 @@ const fileButtonNames = [
   "Schimbări săptămâna 8",
   "Schimbări săptămâna 9",
 ];
+
+let currentFileIndex = fileButtonNames.length - 1;
+let showPrevRemoved = true;
 
 async function renderFileList(files) {
   const fileList = document.getElementById("fileList");
@@ -89,7 +88,7 @@ function percentColor(pct) {
   } else if (Number(pct) < 0) {
     return `rgba(0, 255, 0, 1)`;
   } else {
-    return `rgba(255, 0, 0, 1)`
+    return `rgba(255, 0, 0, 1)`;
   }
 }
 
@@ -130,7 +129,8 @@ async function displayNumbers(files) {
   const weekNum = weekMatch ? parseInt(weekMatch[1]) : "";
   const prevWeekNum = weekNum ? weekNum - 1 : "";
   const lastNumbers = allFilesNumbers[allFilesNumbers.length - 1];
-  const totalMoved = lastNumbers && lastNumbers[1] != null ? lastNumbers[1] : null;
+  const totalMoved =
+    lastNumbers && lastNumbers[1] != null ? lastNumbers[1] : null;
 
   let progressPercent = initialHours
     ? ((totalMoved / initialHours) * 100).toFixed(2)
@@ -155,7 +155,7 @@ async function displayNumbers(files) {
     removedPrev: includePrev ? hoursRemovedPrevious : 0,
   };
 
-  const sumParts = Object.values(chartParts).reduce((a, b) => a + b, 0) || 1; // avoid divide by zero
+  const sumParts = Object.values(chartParts).reduce((a, b) => a + b, 0) || 1;
   const pctThisWeek = (chartParts.thisWeek / sumParts) * 100;
   const pctRemovedThisWeek = (chartParts.removedThisWeek / sumParts) * 100;
   const pctRemovedPrev = (chartParts.removedPrev / sumParts) * 100;
@@ -169,7 +169,6 @@ async function displayNumbers(files) {
     }
   }
 
-  // Build inner HTML for bar chart — three possible segments, previous bar only when included
   block.innerHTML = `
     <div class="bar-chart-container">
       <div class="bar-chart" role="img" aria-label="Diagramă ore">
@@ -226,7 +225,9 @@ async function displayNumbers(files) {
       <div class="bar-hint" style="text-align:left; font-size:1em; color:#fff; margin-top:8px; font-weight:bold; display:flex; align-items:center; gap:12px;">
         <span>* Hover pentru mai multe detalii</span>
         <label style="font-weight:normal; font-size:0.95em; display:flex; align-items:center; gap:4px;">
-          <input type="checkbox" id="togglePrevRemoved" ${showPrevRemoved ? "checked" : ""}>
+          <input type="checkbox" id="togglePrevRemoved" ${
+            showPrevRemoved ? "checked" : ""
+          }>
           Vezi ore mutate anterior
         </label>
       </div>
@@ -259,7 +260,6 @@ async function initView() {
   displayNumbers(files);
 }
 
-
 document.addEventListener("mouseover", function (e) {
   if (
     e.target.classList.contains("bar-label") ||
@@ -269,81 +269,76 @@ document.addEventListener("mouseover", function (e) {
   ) {
     const tooltip = document.createElement("div");
     tooltip.className = "bar-tooltip";
-    let tooltipText = e.target.getAttribute("data-tooltip") || "";
+
+    const tooltipText = e.target.getAttribute("data-tooltip") || "";
     let percentColor = e.target.getAttribute("data-percent-color") || "";
 
     if (!percentColor) {
-      if (e.target.classList.contains("bar-hours-week")) percentColor = "#c0392b";
-      else if (e.target.classList.contains("bar-hours-removed")) percentColor = "#27ae60";
-      else if (e.target.classList.contains("bar-hours-previous")) percentColor = "#14532d";
+      if (e.target.classList.contains("bar-hours-week"))
+        percentColor = "#c0392b";
+      else if (e.target.classList.contains("bar-hours-removed"))
+        percentColor = "#27ae60";
+      else if (e.target.classList.contains("bar-hours-previous"))
+        percentColor = "#14532d";
     }
 
+    // Add colored percentage
     if (percentColor && tooltipText.match(/\((\d+\.\d+%)\)/)) {
       tooltip.innerHTML = tooltipText.replace(
         /\((\d+\.\d+%)\)/,
-        `<span style='color:${percentColor};font-weight:bold;'>($1)</span>`
+        `<span style="color:${percentColor};font-weight:bold;">($1)</span>`
       );
     } else {
-      tooltip.innerText = tooltipText;
+      tooltip.innerHTML = tooltipText;
     }
 
-    document.body.appendChild(tooltip);
     tooltip.style.position = "absolute";
-    tooltip.style.width = "340px";
-    tooltip.style.maxWidth = "90vw";
-    tooltip.style.padding = "18px 32px";
-    tooltip.style.fontSize = "1.3em";
+    tooltip.style.pointerEvents = "none";
+    tooltip.style.whiteSpace = "nowrap";
+    tooltip.style.padding = "8px 14px";
+    tooltip.style.borderRadius = "6px";
     tooltip.style.background = "#1b263b";
     tooltip.style.color = "#fff";
-    tooltip.style.borderRadius = "12px";
-    tooltip.style.boxShadow = "0 2px 16px rgba(65, 90, 119, 0.18)";
-    tooltip.style.zIndex = "99999";
-    tooltip.style.whiteSpace = "normal";
-    tooltip.style.pointerEvents = "none";
+    tooltip.style.boxShadow = "0 2px 8px rgba(65, 90, 119, 0.25)";
+    tooltip.style.zIndex = 9999;
 
-    let tooltipPositionRequest = null;
-    function positionTooltip(ev) {
-      if (tooltipPositionRequest) return;
-      tooltipPositionRequest = requestAnimationFrame(() => {
-        let isRight =
-          e.target.closest(".bar-hours-removed") ||
-          e.target.closest(".bar-hours-previous");
+    document.body.appendChild(tooltip);
 
-        let left = ev.clientX;
-        let top = ev.clientY + 24;
-        let transform = isRight ? "translateX(-100%)" : "translateX(0)";
-        const tooltipWidth = tooltip.offsetWidth || 340;
+    const mainContent = document.querySelector(".main-content");
 
-        if (isRight && left - tooltipWidth < 0) left = tooltipWidth + 8;
-        if (!isRight && left + tooltipWidth > window.innerWidth)
-          left = window.innerWidth - tooltipWidth - 8;
+    function moveTooltip(ev) {
+      const mainRect = mainContent.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      const offset = 12;
 
-        if (top + tooltip.offsetHeight > window.innerHeight)
-          top = window.innerHeight - tooltip.offsetHeight - 8;
-        if (top < 0) top = 8;
+      let left = ev.pageX + offset;
+      let top = ev.pageY + offset;
 
-        tooltip.style.left = left + "px";
-        tooltip.style.top = top + "px";
-        tooltip.style.transform = transform;
+      const maxLeft =
+        window.innerWidth - tooltipRect.width / 2 + window.scrollX - 20;
+      const minLeft = mainRect.left + window.scrollX + tooltipRect.width / 2;
+      const maxTop = window.scrollY + window.innerHeight - 8;
+      const minTop = window.scrollY + 8;
 
-        tooltipPositionRequest = null;
-      });
+      left = Math.min(Math.max(left, minLeft), maxLeft);
+      top = Math.min(Math.max(top, minTop), maxTop);
+
+      tooltip.style.left = left + "px";
+      tooltip.style.top = top + "px";
     }
 
-    document.addEventListener("mousemove", positionTooltip);
+    document.addEventListener("mousemove", moveTooltip);
     e.target._tooltip = tooltip;
-    e.target._positionTooltip = positionTooltip;
+    e.target._moveTooltip = moveTooltip;
   }
 });
 
 document.addEventListener("mouseout", function (e) {
-  if (e.target && e.target._tooltip) {
+  if (e.target._tooltip) {
     e.target._tooltip.remove();
+    document.removeEventListener("mousemove", e.target._moveTooltip);
     e.target._tooltip = null;
-    if (e.target._positionTooltip) {
-      document.removeEventListener("mousemove", e.target._positionTooltip);
-      e.target._positionTooltip = null;
-    }
+    e.target._moveTooltip = null;
   }
 });
 
