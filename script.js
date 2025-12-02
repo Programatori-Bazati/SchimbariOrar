@@ -38,6 +38,7 @@ async function getTxtFilesFromDataFolder() {
     "data/compare_sapt6_cu_7.txt",
     "data/compare_sapt7_cu_8.txt",
     "data/compare_sapt8_cu_9.txt",
+    "data/compare_sapt9_cu_10.txt",
   ];
 }
 
@@ -47,6 +48,7 @@ const fileButtonNames = [
   "Schimbări săptămâna 7",
   "Schimbări săptămâna 8",
   "Schimbări săptămâna 9",
+  "Schimbări săptămâna 10",
 ];
 
 let currentFileIndex = fileButtonNames.length - 1;
